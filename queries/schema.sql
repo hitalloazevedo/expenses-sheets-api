@@ -15,7 +15,7 @@ CREATE TABLE expenses (
         ON DELETE CASCADE
 );
 
-CREATE TABLE expenses_categories (
-    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(30) UNIQUE
-);
+-- CREATE TABLE expenses_categories (
+--     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+--     name VARCHAR(30) UNIQUE
+-- );

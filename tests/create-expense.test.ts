@@ -1,48 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createExpense } from "../src/use-cases/create-expense.js";
-import { pool } from "../src/infra/db.js";
+import { ExpenseUseCase } from "../src/use-cases/expenses.usecase.js";
 import { expectSuccess, expectError } from "../src/test-helpers.js";
 
-const { mockConnect, mockQuery, mockRelease } = vi.hoisted(() => ({
-  mockConnect: vi.fn(),
-  mockQuery: vi.fn(),
-  mockRelease: vi.fn(),
-}));
+describe("ExpenseUseCase.create", () => {
+  let repository: any;
+  let useCase: ExpenseUseCase;
 
-vi.mock("../src/infra/db.js", () => ({
-  pool: {
-    connect: mockConnect,
-  },
-}));
-
-describe("createExpense", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    repository = {
+      save: vi.fn(),
+      findAll: vi.fn(),
+    };
 
-    mockConnect.mockResolvedValue({
-      query: mockQuery,
-      release: mockRelease,
-    });
-
-    mockQuery.mockImplementation(async (sql: string) => {
-      if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") {
-        return { rows: [], rowCount: null };
-      }
-
-      if (sql.includes("INSERT INTO transactions")) {
-        return { rows: [{ id: 1 }], rowCount: 1 };
-      }
-
-      if (sql.includes("INSERT INTO expenses")) {
-        return { rows: [], rowCount: 1 };
-      }
-
-      return { rows: [], rowCount: 0 };
-    });
+    useCase = new ExpenseUseCase(repository);
   });
 
   it("should insert a valid expense", async () => {
-    const result = await createExpense({
+    repository.save.mockResolvedValue({ success: true });
+
+    const result = await useCase.create({
       amount: 100,
       description: "Lunch",
       category: "food",
@@ -50,39 +26,32 @@ describe("createExpense", () => {
     });
 
     expectSuccess(result);
-    expect(pool.connect).toHaveBeenCalled();
-    expect(mockQuery).toHaveBeenNthCalledWith(1, "BEGIN");
-    expect(mockQuery).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining("INSERT INTO transactions"),
-      [-100, "2026-03-23"]
-    );
-    expect(mockQuery).toHaveBeenNthCalledWith(
-      3,
-      expect.stringContaining("INSERT INTO expenses"),
-      ["Lunch", "food", 1]
-    );
-    expect(mockQuery).toHaveBeenNthCalledWith(4, "COMMIT");
-    expect(mockRelease).toHaveBeenCalled();
+    expect(repository.save).toHaveBeenCalledWith({
+      amount: 100,
+      description: "Lunch",
+      category: "food",
+      date: "2026-03-23",
+    });
   });
 
   it("should reject invalid category", async () => {
-    const result = await createExpense({
+    const result = await useCase.create({
       amount: 100,
       description: "Invalid",
-      category: "transport",
+      category: "transport", // assuming invalid
     });
 
     expectError(result);
     expect(result.error).toBe("VALIDATION_ERROR");
-    expect(pool.connect).not.toHaveBeenCalled();
-    expect(mockQuery).not.toHaveBeenCalled();
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it("should use today's date if not provided", async () => {
+    repository.save.mockResolvedValue({ success: true });
+
     const today = new Date().toISOString().slice(0, 10);
 
-    const result = await createExpense({
+    const result = await useCase.create({
       amount: 50,
       description: "Groceries",
       category: "supermarket",
@@ -90,20 +59,16 @@ describe("createExpense", () => {
 
     expectSuccess(result);
 
-    expect(mockQuery).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining("INSERT INTO transactions"),
-      [-50, today]
-    );
-    expect(mockQuery).toHaveBeenNthCalledWith(
-      3,
-      expect.stringContaining("INSERT INTO expenses"),
-      ["Groceries", "supermarket", 1]
-    );
+    expect(repository.save).toHaveBeenCalledWith({
+      amount: 50,
+      description: "Groceries",
+      category: "supermarket",
+      date: today,
+    });
   });
 
   it("should reject negative amount", async () => {
-    const result = await createExpense({
+    const result = await useCase.create({
       amount: -30,
       description: "Refund",
       category: "other",
@@ -111,12 +76,11 @@ describe("createExpense", () => {
 
     expectError(result);
     expect(result.error).toBe("VALIDATION_ERROR");
-    expect(pool.connect).not.toHaveBeenCalled();
-    expect(mockQuery).not.toHaveBeenCalled();
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it("should reject zero amount", async () => {
-    const result = await createExpense({
+    const result = await useCase.create({
       amount: 0,
       description: "Invalid",
       category: "food",
@@ -124,7 +88,19 @@ describe("createExpense", () => {
 
     expectError(result);
     expect(result.error).toBe("VALIDATION_ERROR");
-    expect(pool.connect).not.toHaveBeenCalled();
-    expect(mockQuery).not.toHaveBeenCalled();
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it("should return DATABASE_ERROR if repository fails", async () => {
+    repository.save.mockResolvedValue({ success: false });
+
+    const result = await useCase.create({
+      amount: 100,
+      description: "Lunch",
+      category: "food",
+    });
+
+    expectError(result);
+    expect(result.error).toBe("DATABASE_ERROR");
   });
 });
