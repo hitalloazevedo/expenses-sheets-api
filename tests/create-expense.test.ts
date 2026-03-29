@@ -34,6 +34,48 @@ describe("ExpenseUseCase.create", () => {
     });
   });
 
+  it("should pass correlation_id to repository", async () => {
+    repository.save.mockResolvedValue({ success: true });
+
+    const result = await useCase.create({
+      amount: 100,
+      description: "Lunch",
+      category: "food",
+      date: "2026-03-23",
+      correlation_id: "test-correlation-id",
+    });
+
+    expectSuccess(result);
+    expect(repository.save).toHaveBeenCalledWith({
+      amount: 100,
+      description: "Lunch",
+      category: "food",
+      date: "2026-03-23",
+      correlation_id: "test-correlation-id",
+    });
+  });
+
+  it("should pass source to repository", async () => {
+    repository.save.mockResolvedValue({ success: true });
+
+    const result = await useCase.create({
+      amount: 100,
+      description: "Lunch",
+      category: "food",
+      date: "2026-03-23",
+      source: "test-source",
+    });
+
+    expectSuccess(result);
+    expect(repository.save).toHaveBeenCalledWith({
+      amount: 100,
+      description: "Lunch",
+      category: "food",
+      date: "2026-03-23",
+      source: "test-source",
+    });
+  });
+
   it("should reject invalid category", async () => {
     const result = await useCase.create({
       amount: 100,

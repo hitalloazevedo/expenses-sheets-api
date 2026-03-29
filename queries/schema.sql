@@ -1,7 +1,9 @@
 CREATE TABLE transactions (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     amount INT NOT NULL,
-    date DATE NOT NULL
+    date DATE NOT NULL,
+    correlation_id UUID UNIQUE,
+    source VARCHAR(50)
 );
 
 CREATE TABLE expenses (
@@ -14,6 +16,12 @@ CREATE TABLE expenses (
         REFERENCES transactions(id)
         ON DELETE CASCADE
 );
+
+ALTER TABLE transactions
+ADD COLUMN correlation_id UUID UNIQUE;
+
+ALTER TABLE transactions
+ADD COLUMN source VARCHAR(50);
 
 -- CREATE TABLE expenses_categories (
 --     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

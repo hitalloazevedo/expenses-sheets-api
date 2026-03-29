@@ -21,7 +21,9 @@ export class ExpenseUseCase {
             amount: data.amount,
             category: data.category,
             date,
-            description: data.description
+            description: data.description,
+            correlation_id: data.correlation_id,
+            source: data.source
         })
 
         if (!savedExpense.success) return err('DATABASE_ERROR')

@@ -27,6 +27,8 @@ export const createExpenseDtoSchema = z.object({
       message: "Invalid date",
     })
     .optional(),
+  correlation_id: z.uuid("Correlation ID must be a valid UUID").optional(),
+  source: z.string().optional(),
 });
 
 export const expenseSchema = createExpenseDtoSchema.extend({
@@ -36,6 +38,8 @@ export const expenseSchema = createExpenseDtoSchema.extend({
     .refine((val) => !isNaN(new Date(val).getTime()), {
       message: "Invalid date",
     }),
+  correlation_id: z.uuid("Correlation ID must be a valid UUID").optional(),
+  source: z.string().optional(),
 });
 
 export type Category = z.infer<typeof categoryEnum>;

@@ -37,10 +37,10 @@ export class PostgresExpenseRepository implements ExpenseRepository {
 
       // 1. cria transaction
       const txResult = await client.query(
-        `INSERT INTO transactions (amount, date)
-               VALUES ($1, $2)
+        `INSERT INTO transactions (amount, date, correlation_id, source)
+               VALUES ($1, $2, $3, $4)
                RETURNING id`,
-        [signedAmount, expense.date]
+        [signedAmount, expense.date, expense.correlation_id, expense.source]
       );
 
       const transactionId = txResult.rows[0].id;
