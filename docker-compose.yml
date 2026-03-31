@@ -16,15 +16,12 @@ services:
     build: .
     container_name: expense-api
     restart: unless-stopped
-
     ports:
       - "3000:3000"
-
     env_file:
       - .env
     depends_on:
       - postgres
-
 
 volumes:
   postgres_data:

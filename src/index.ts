@@ -11,7 +11,6 @@ const fastify = Fastify({
 
 const expenseUseCase = new ExpenseUseCase(new PostgresExpenseRepository(pool));
 
-
 fastify.post('/expenses', async function handler (request, reply) {
   
     const correlationId = request.headers['x-correlation-id'] as string | undefined;

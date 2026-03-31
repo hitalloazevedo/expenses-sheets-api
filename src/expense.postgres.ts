@@ -35,7 +35,6 @@ export class PostgresExpenseRepository implements ExpenseRepository {
 
       const signedAmount = -Math.abs(expense.amount)
 
-      // 1. cria transaction
       const txResult = await client.query(
         `INSERT INTO transactions (amount, date, correlation_id, source)
                VALUES ($1, $2, $3, $4)
